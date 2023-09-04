@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 3D Scene</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("gameCanvas") });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Geometria 1: Cubo
+        const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Material vermelho
+        const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.position.x = -2;
+        cube.castShadow = true; // Lança sombras
+        scene.add(cube);
+
+        // Geometria 2: Esfera
+        const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const sphereMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 }); // Material verde
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.x = 2;
+        sphere.castShadow = true; // Lança sombras
+        scene.add(sphere);
+
+        // Geometria 3: Cilindro
+        const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 32);
+        const cylinderMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff }); // Material azul
+        const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+        cylinder.position.z = -2;
+        cylinder.castShadow = true; // Lança sombras
+        scene.add(cylinder);
+
+        // Luzes
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight1.position.set(5, 5, 5);
+        directionalLight1.castShadow = true; // Lança sombras
+        scene.add(directionalLight1);
+
+        const directionalLight2 = new THREE.DirectionalLight(0xff00ff, 1); // Luz direcional com cor magenta
+        directionalLight2.position.set(-5, -5, -5);
+        directionalLight2.castShadow = true; // Lança sombras
+        scene.add(directionalLight2);
+
+        const directionalLight3 = new THREE.DirectionalLight(0x00ffff, 1); // Luz direcional com cor ciano
+        directionalLight3.position.set(0, 5, 0);
+        directionalLight3.castShadow = true; // Lança sombras
+        scene.add(directionalLight3);
+
+        // Sombras
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Posicionamento da câmera
+        camera.position.set(0, 3, 5);
+
+        // Animação com RequestAnimationFrame
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Girar objetos
+            cube.rotation.x += 0.005;
+            cube.rotation.y += 0.005;
+            sphere.rotation.x += 0.005;
+            sphere.rotation.y += 0.005;
+            cylinder.rotation.z += 0.005;
+
+            // Animar escala sutil
+            cube.scale.x = 1 + 0.1 * Math.sin(Date.now() * 0.001);
+            sphere.scale.x = 1 + 0.1 * Math.sin(Date.now() * 0.001);
+            cylinder.scale.x = 1 + 0.1 * Math.sin(Date.now() * 0.001);
+
+            renderer.render(scene, camera);
+        }
+
+        // Interação com o mouse
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const objects = [cube, sphere, cylinder];
+        let selectedObject = null;
+
+        window.addEventListener('mousemove', (event) => {
+            // Atualiza a posição do mouse
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Verifica se o mouse está sobre algum objeto
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(objects);
+            if (intersects.length > 0) {
+                if (selectedObject !== intersects[0].object) {
+                    if (selectedObject) {
+                        selectedObject.material.emissive.setHex(selectedObject.currentHex);
+                    }
+                    selectedObject = intersects[0].object;
+                    selectedObject.currentHex = selectedObject.material.emissive.getHex();
+                    selectedObject.material.emissive.setHex(0xff0000);
+                }
+            } else {
+                if (selectedObject) {
+                    selectedObject.material.emissive.setHex(selectedObject.currentHex);
+                }
+                selectedObject = null;
+            }
+        });
+
+        // Interação com o teclado
+        window.addEventListener('keydown', (event) => {
+            const speed = 0.1;
+            switch (event.key) {
+                case 'ArrowLeft':
+                    if (selectedObject) {
+                        selectedObject.position.x -= speed;
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (selectedObject) {
+                        selectedObject.position.x += speed;
+                    }
+                    break;
+                case 'ArrowUp':
+                    if (selectedObject) {
+                        selectedObject.position.y += speed;
+                    }
+                    break;
+                case 'ArrowDown':
+                    if (selectedObject) {
+                        selectedObject.position.y -= speed;
+                    }
+                    break;
+            }
+        });
+
+        // Iniciar animação
+        animate();
+    </script>
+</body>
+</html>
